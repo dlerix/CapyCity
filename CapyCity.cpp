@@ -2,6 +2,7 @@
 #include <string>
 #include <regex>
 #include <vector>
+#include <map>
 using namespace std;
 
 int length;
@@ -64,40 +65,44 @@ public:
     Plastic() : Material("Kunststoff", 5) {}
 };
 
+struct MaterialComparator {
+    bool operator()(const Material& m1, const Material& m2) const {
+        return m1.getName() < m2.getName();
+    }
+};
+
 class WaterPlant : public Building {
 public:
     WaterPlant() : Building(100, 'W') {
-        materials = vector<Material>() = {
-            Wood(),
-            Wood(),
-            Metal(),
-            Metal() };
+        materials = map<Material, int, MaterialComparator>({
+            {Wood(), 2},
+            {Metal(), 2},
+            {Plastic(), 1}
+            });
     }
-    vector<Material> materials;
+    map<Material, int, MaterialComparator> materials;
 };
 
 class WindPlant : public Building {
 public:
     WindPlant() : Building(50, 'I') {
-        materials = vector<Material>() = {
-            Plastic(),
-            Plastic(),
-            Metal(),
-            Metal() };
+        materials = map<Material, int, MaterialComparator>({
+            {Plastic(), 2},
+            {Metal(), 2}
+            });
     }
-    vector<Material> materials;
+    map<Material, int, MaterialComparator> materials;
 };
 
 class SolarPlant : public Building {
 public:
     SolarPlant() : Building(250, 'S') {
-        materials = vector<Material>() = {
-            Plastic(),
-            Plastic(),
-            Plastic(),
-            Metal() };
+        materials = map<Material, int, MaterialComparator>({
+        {Plastic(), 3},
+        {Metal(), 1}
+            });
     }
-    vector<Material> materials;
+    map<Material, int, MaterialComparator> materials;
 };
 
 Building* buildingMenu();
@@ -141,7 +146,7 @@ public:
         for (int i = startX; i < startX + breite; i++) {
             for (int j = startY; j < startY + laenge; j++) {
                 if ((startX + breite) > width || (startY + laenge) > length || Area[j][i] != nullptr) {
-                    cout << "Flaeche ist ausserhalb des Baubereichs oder belegt!\n\n";
+                    cout << "Flaeche schon belegt oder ausserhalb des Baubereichs!\n\n";
                     return buildBuilding();
                 }
                 else {
@@ -160,7 +165,7 @@ public:
             return stoi(startX);
         }
         else {
-            cout << "Ziffer zwischen 0 und " << (length - 1) << " eingeben\n";
+            cout << "Zahl zwischen 0 und " << (length - 1) << " eingeben\n";
             return positionX();
         }
     }
@@ -174,7 +179,7 @@ public:
             return stoi(startY);
         }
         else {
-            cout << "Ziffer zwischen 0 und " << (width - 1) << " eingeben\n";
+            cout << "Zahl zwischen 0 und " << (width - 1) << " eingeben\n";
             return positionY();
         }
     }
@@ -182,13 +187,13 @@ public:
     int buildingWidth() {
         string breite;
 
-        cout << "Breite der Flaeche angeben: \n";
+        cout << "Wie breit soll die Flaeche sein: \n";
         cin >> breite;
         if (regex_match(breite, numberCheck) && stoi(breite) > 0 && stoi(breite) <= width) {
             return stoi(breite);
         }
         else {
-            cout << "Die Breite muss eine Ziffer zwischen 1 und " << width << " sein!\n";
+            cout << "Die Breite muss eine Zahl zwischen 1 und " << width << " sein!\n";
             return buildingWidth();
         }
     }
@@ -196,13 +201,13 @@ public:
     int buildingLength() {
         string laenge;
 
-        cout << "Laenge der Flaeche angeben: \n";
+        cout << "Wie lang soll die Flaeche sein: \n";
         cin >> laenge;
         if (regex_match(laenge, numberCheck) && stoi(laenge) > 0 && stoi(laenge) <= length) {
             return stoi(laenge);
         }
         else {
-            cout << "Die Laenge muss eine Ziffer zwischen 1 und " << length << " sein!\n";
+            cout << "Die Laenge muss eine Zahl zwischen 1 und " << length << " sein!\n";
             return buildingLength();
         }
     }
@@ -219,7 +224,6 @@ public:
                 }
                 else {
                     cout << "[" << Area[x][y]->getLabel() << "]";
-
                     if (Area[x][y]->getLabel() == 'W') {
                         w++;
                     }
@@ -234,76 +238,57 @@ public:
             cout << endl;
         }
 
-        int mat = 0;
-        int mat2 = 0;
+        // Wasserkraftwerk
         int matCost = 0;
-        for (int count = 0; count < w; count++) {
-            for (auto& i : WaterPlant().materials) {
-                if (i.getName() == "Holz") {
-                    mat++;
-                    matCost += Wood().getPrice();
-                }
-                if (i.getName() == "Metall") {
-                    mat2++;
-                    matCost += Metal().getPrice();
-                }
-            }
-        }
-        cout
-            << endl << w << " Wasserkraftwerke\n"
+
+        cout << endl
+            << w << " Wassserkraftwerke\n"
             << "Ein Wasserkraftwerk kostet: " << WaterPlant().getPrice() << "$\n"
-            << "Wasserkraftwerke benötigen " << mat << " Holz und " << mat2 << " Metall\n"
-            << "Gesamtkosten der Wasserkraftwerke betragen: " << (w * WaterPlant().getPrice()) + matCost << "$\n";
+            << "Wasserkraftwerke benötigen: ";
 
-        int allCost = 0;
-        allCost += (w * WaterPlant().getPrice()) + matCost;
-
-        mat = 0;
-        mat2 = 0;
-        matCost = 0;
-        for (int count = 0; count < i; count++) {
-            for (auto& i : WindPlant().materials) {
-                if (i.getName() == "Kunststoff") {
-                    mat++;
-                    matCost += Plastic().getPrice();
-                }
-                if (i.getName() == "Metall") {
-                    mat2++;
-                    matCost += Metal().getPrice();
-                }
-            }
+        for (auto& whichMat : WaterPlant().materials) {
+            cout << "[" << w * whichMat.second << " " << whichMat.first.getName() << "] ";
+            matCost += whichMat.second * whichMat.first.getPrice();
         }
-        cout
-            << endl << i << " Windkraftwerke\n"
+
+        cout << endl
+            << "Gesamtkosten der Wasserkraftwerke betragen:  "
+            << w * (WaterPlant().getPrice() + matCost) << "$\n";
+
+
+        // Windkraftwerk
+        matCost = 0;
+
+        cout << endl
+            << i << " Windkraftwerke\n"
             << "Ein Windkraftwerk kostet: " << WindPlant().getPrice() << "$\n"
-            << "Wasserkraftwerke benötigen " << mat << " Kunststoff und " << mat2 << " Metall\n"
-            << "Gesamtkosten der Windkraftwerke betragen: " << (i * WindPlant().getPrice()) + matCost << "$\n";
+            << "Windkraftwerke benoetigen: ";
 
-        allCost += (i * WindPlant().getPrice()) + matCost;
-
-        mat = 0;
-        mat2 = 0;
-        matCost = 0;
-        for (int count = 0; count < s; count++) {
-            for (auto& i : SolarPlant().materials) {
-                if (i.getName() == "Kunststoff") {
-                    mat++;
-                    matCost += Plastic().getPrice();
-                }
-                if (i.getName() == "Metall") {
-                    mat2++;
-                    matCost += Metal().getPrice();
-                }
-            }
+        for (auto& whichMat : WindPlant().materials) {
+            cout << "[" << i * whichMat.second << " " << whichMat.first.getName() << "] ";
+            matCost += whichMat.second * whichMat.first.getPrice();
         }
-        cout
-            << endl << s << " Solarpanele\n"
-            << "Ein Solarpanel kostet: " << SolarPlant().getPrice() << "$\n"
-            << "Solarpanel benötigt " << mat << " Kunststoff und " << mat2 << " Metall\n"
-            << "Gesamtkosten der Solarpanele betragen: " << (s * SolarPlant().getPrice()) + matCost << "$\n";
 
-        allCost += (s * SolarPlant().getPrice()) + matCost;
-        cout << endl << "Gesamtkosten: " << allCost << "$\n";
+        cout << endl
+            << "Gesamtkosten der Windkraftwerke betragen:  "
+            << i * (WindPlant().getPrice() + matCost) << "$\n";
+
+        // Solarpanel
+        matCost = 0;
+
+        cout << endl
+            << s << " Solarpanel\n"
+            << "Ein Solarpanel kostet: " << SolarPlant().getPrice() << "$\n"
+            << "Solarpanel benoetigt: ";
+
+        for (auto& whichMat : SolarPlant().materials) {
+            cout << "[" << s * whichMat.second << " " << whichMat.first.getName() << "] ";
+            matCost += whichMat.second * whichMat.first.getPrice();
+        }
+
+        cout << endl
+            << "Gesamtkosten der Solarpanels betragen:  "
+            << s * (SolarPlant().getPrice() + matCost) << "$\n";
 
         menu();
     }
@@ -329,10 +314,10 @@ void menu() {
     CapycitySim CapycitySim;
 
     cout << endl
-        << "1 - Setzen eines Gebaeudes\n"
-        << "2 - Einen Bereich loeschen\n"
-        << "3 - Aktuellen Bauplan anzeigen\n"
-        << "4 - Verlassen\n";
+        << "1 - Gebaeude setzen\n"
+        << "2 - Bereich loeschen\n"
+        << "3 - Aktueller Bauplan\n"
+        << "4 - Exit\n";
 
     cin >> choice;
 
@@ -350,7 +335,6 @@ void menu() {
             //Print Blauplan
             CapycitySim.buildingPlan();
             break;
-
         case 4:
             //Beenden des Programms
             cout << "Auf wiedersehen";
@@ -358,7 +342,7 @@ void menu() {
         }
     }
     else {
-        cout << "Nur Ziffern von 1 - 4 erlaubt!\n";
+        cout << "Nur Zahlen von 1 - 4 erlaubt!\n";
         menu();
     }
 }
@@ -366,7 +350,7 @@ void menu() {
 Building* buildingMenu() {
     string buildingChoice;
 
-    cout << "Welches Gebaeude soll gebaut werden?";
+    cout << "Was fuer ein Gebaeude soll gebaut werden?";
 
     cout << endl
         << "1 - Wasserkraftwerk\n"
@@ -391,7 +375,7 @@ Building* buildingMenu() {
         }
     }
     else {
-        cout << "Nur Ziffern von 1 - 4 erlaubt!\n";
+        cout << "Nur Zahlen von 1 - 4 erlaubt!\n";
         return buildingMenu();
     }
 }
